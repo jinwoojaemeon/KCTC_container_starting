@@ -7,6 +7,9 @@ const PAGE_SIZE = 100;
 export default function ContainerFare() {
   const [dbData, setDbData] = useState(null);
   const [dataError, setDataError] = useState(null);
+  const [passwordRequired, setPasswordRequired] = useState(false);
+  const [passwordInput, setPasswordInput] = useState('');
+  const [passwordError, setPasswordError] = useState('');
   const [type, setType] = useState('왕복');
   const [selectedOrigins, setSelectedOrigins] = useState([]);
   const [searchRegion, setSearchRegion] = useState('');
@@ -15,18 +18,43 @@ export default function ContainerFare() {
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const loadMoreRef = useRef(null);
 
-  useEffect(() => {
+  const loadData = () => {
     let cancelled = false;
     setDataError(null);
     fetch('/api/data')
       .then((res) => {
+        if (res.status === 403) {
+          if (!cancelled) setPasswordRequired(true);
+          throw new Error('비밀번호가 필요합니다.');
+        }
         if (!res.ok) throw new Error(res.status === 401 ? '로그인이 필요합니다.' : '데이터를 불러올 수 없습니다.');
         return res.json();
       })
-      .then((data) => { if (!cancelled) setDbData(data); })
-      .catch((err) => { if (!cancelled) setDataError(err.message); });
+      .then((data) => { if (!cancelled) { setDbData(data); setPasswordRequired(false); } })
+      .catch((err) => { if (!cancelled && err.message !== '비밀번호가 필요합니다.') setDataError(err.message); });
     return () => { cancelled = true; };
+  };
+
+  useEffect(() => {
+    loadData();
   }, []);
+
+  const handlePasswordSubmit = async (e) => {
+    e.preventDefault();
+    setPasswordError('');
+    const res = await fetch('/api/check-view-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: passwordInput }),
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      setPasswordInput('');
+      loadData();
+    } else {
+      setPasswordError(data.error || '비밀번호가 올바르지 않습니다.');
+    }
+  };
 
   const db = dbData || { '편도': {}, '왕복': {} };
   const originKeys = db[type] ? Object.keys(db[type]) : [];
@@ -110,6 +138,40 @@ export default function ContainerFare() {
 
   const visibleData = sortedData.slice(0, visibleCount);
   const hasMore = visibleCount < sortedData.length;
+
+  if (passwordRequired) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-4 font-sans text-gray-900 flex items-center justify-center">
+        <div className="bg-white shadow-lg rounded-xl p-8 max-w-md w-full">
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">데이터 보기 비밀번호</h2>
+            <p className="text-gray-600 text-sm">운임 데이터를 보기 위해 비밀번호를 입력하세요.</p>
+          </div>
+          <form onSubmit={handlePasswordSubmit} className="space-y-4">
+            <div>
+              <input
+                type="password"
+                value={passwordInput}
+                onChange={(e) => setPasswordInput(e.target.value)}
+                placeholder="비밀번호 입력"
+                className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                autoFocus
+              />
+              {passwordError && (
+                <p className="mt-2 text-sm text-red-600">{passwordError}</p>
+              )}
+            </div>
+            <button
+              type="submit"
+              className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+            >
+              확인
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   if (dataError) {
     return (

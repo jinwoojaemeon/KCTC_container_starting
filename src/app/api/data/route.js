@@ -1,4 +1,5 @@
 import { auth } from '@clerk/nextjs/server';
+import { cookies } from 'next/headers';
 import { list } from '@vercel/blob';
 import fs from 'fs';
 import path from 'path';
@@ -10,6 +11,16 @@ export async function GET() {
       status: 401,
       headers: { 'Content-Type': 'application/json' },
     });
+  }
+
+  // 비밀번호 통과 확인 (view_access 쿠키)
+  const cookieStore = await cookies();
+  const viewAccess = cookieStore.get('view_access');
+  if (!viewAccess || viewAccess.value !== '1') {
+    return new Response(
+      JSON.stringify({ error: '데이터 보기를 위해 비밀번호를 입력해 주세요.' }),
+      { status: 403, headers: { 'Content-Type': 'application/json' } }
+    );
   }
 
   try {
