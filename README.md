@@ -29,6 +29,17 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
+## 환경 변수 (로컬 / Vercel)
+
+- **Clerk** (로그인 필수): [Clerk 대시보드](https://dashboard.clerk.com)에서 앱 생성 후
+  - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
+  - `CLERK_SECRET_KEY`
+- **Vercel Blob** (배포 시 데이터): Vercel 프로젝트에 Blob 스토어 연결 후
+  - `BLOB_READ_WRITE_TOKEN` (자동 주입됨)
+  - 로컬에서 업로드: `BLOB_READ_WRITE_TOKEN`을 `.env.local`에 넣고 `npm run upload-db` 실행
+
+`data/`, `src/data/db.json`은 .gitignore 되어 있으며, 배포 시에는 Blob에 업로드한 db.json을 API에서 불러옵니다. 로컬에서는 `src/data/db.json`이 있으면 API가 해당 파일을 사용합니다.
+
 ## Deploy on Vercel
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.

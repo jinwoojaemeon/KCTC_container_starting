@@ -1,7 +1,8 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# dependencies
+# dependencies (커밋 제외, 배포 시 npm install 로 설치)
 /node_modules
+node_modules
 /.pnp
 .pnp.*
 .yarn/*
@@ -39,3 +40,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# 데이터 (Blob/외부에서 로드)
+/data/
+/src/data/db.json
+
+# clerk configuration (can include secrets)
+/.clerk/
